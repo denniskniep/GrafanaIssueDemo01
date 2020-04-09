@@ -1,0 +1,51 @@
+# https://github.com/grafana/loki/blob/master/docs/clients/promtail/configuration.md
+# https://github.com/grafana/loki/blob/master/docs/clients/promtail/troubleshooting.md#dry-running
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /data/promtail/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: logs
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          __path__: /logs/*.log.json
+          # Additional static labels
+          app: myApp
+    pipeline_stages:
+      # The JSON stage parses a log line as JSON and takes JMESPath expressions to extract data from the JSON to be used in further stages.
+      - json:
+          expressions:
+            timestamp: '"@timestamp"'
+            timestamp_nano: 'TIMESTAMP_NANO'
+            message: "message"
+            level: "level"
+            logger_name: "logger_name"
+            thread_name: "thread_name"
+            stack_trace: "stack_trace"
+            request_id: "REQUEST_ID"            
+            execution_time: "EXECUTION_TIME"
+            is_auditlog: "IS_AUDITLOG"           
+      # The template stage is a transform stage that lets use manipulate the values in the extracted map using Go's template syntax.
+      - template:
+          source: "level"
+          template: '{{ ToLower .Value }}'
+      # The timestamp stage parses data from the extracted map and overrides the final time value of the log that is stored by Loki
+      - timestamp:
+          source: "timestamp_nano"
+          format: "UnixNs"
+      # The output stage takes data from the extracted map and sets the contents of the log entry that will be stored by Loki.
+      - output:
+          source: "message"
+      # The labels stage takes data from the extracted map and sets additional labels on the log entry that will be sent to Loki.
+      - labels:
+          timestamp:
+          level:
+

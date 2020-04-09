@@ -1,0 +1,41 @@
+version: "3.7"
+services:
+  grafana:
+    image: grafana/grafana:6.7.2
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./docker/grafana/provisioning/:/etc/grafana/provisioning/
+    ports:
+      - 127.0.0.1:3000:3000
+    environment:
+      GF_SECURITY_ADMIN_USER: "admin"
+      GF_SECURITY_ADMIN_PASSWORD: "admin"
+    networks: ["my-net"]
+
+  promtail:
+    image: grafana/promtail:1.4.1
+    volumes:
+      - promtail_data:/data/promtail
+      - ./logs:/logs
+      - ./docker/promtail/config.yaml:/config/config.yaml
+    command: "-config.file=/config/config.yaml -log.level=debug"
+    networks: ["my-net"]
+
+  loki:
+    image: grafana/loki:1.4.1
+    volumes:
+      - loki_data:/data/loki
+    ports:
+      - 127.0.0.1:3100:3100
+    command: -config.file=/etc/loki/local-config.yaml
+    networks: ["my-net"]
+
+volumes:
+  database-data: {}
+  prometheus-data: {}
+  grafana_data: {}
+  promtail_data: {}
+  loki_data: {}
+
+networks:
+  my-net: {}
