@@ -31,8 +31,6 @@ services:
     networks: ["my-net"]
 
 volumes:
-  database-data: {}
-  prometheus-data: {}
   grafana_data: {}
   promtail_data: {}
   loki_data: {}
